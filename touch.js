@@ -70,6 +70,7 @@ var handleTouchStart = (e) => {
     var touches = e.changedTouches;
     for(var i = 0; i < touches.length; i ++) {
         if(touches[i].pageX < 50 && touches[i].pageY < 50) {
+            console.log("aah");
             navigator.serviceWorker.getRegistrations()
                 .then(registrations => {
                     registrations.map(r => {
