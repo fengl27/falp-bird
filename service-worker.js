@@ -1,24 +1,24 @@
-const CACHE_NAME = 'game-cache-v2';
+const CACHE_NAME = 'game-cache-v3';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/bird.js',
-  '/touch.js',
-  '/tube.js',
-  '/main.js',
-  '/assets/background.png',
-  '/assets/bird1.png',
-  '/assets/bird2.png',
-  '/assets/bird3.png',
-  '/assets/floor.png',
-  '/assets/game_over.png',
-  '/assets/numbers.png',
-  '/assets/play_flipped.png',
-  '/assets/play.png',
-  '/assets/score_thing.png',
-  '/assets/small_numbers.png',
-  '/assets/tube.png',
-  '/icon.png'
+  './',
+  './index.html',
+  './bird.js',
+  './touch.js',
+  './tube.js',
+  './main.js',
+  './assets/background.png',
+  './assets/bird1.png',
+  './assets/bird2.png',
+  './assets/bird3.png',
+  './assets/floor.png',
+  './assets/game_over.png',
+  './assets/numbers.png',
+  './assets/play_flipped.png',
+  './assets/play.png',
+  './assets/score_thing.png',
+  './assets/small_numbers.png',
+  './assets/tube.png',
+  './icon.png'
 ];
 
 // Install event
@@ -43,5 +43,5 @@ self.addEventListener('fetch', event => {
       .then(response => {
         return response || fetch(event.request);
       })
-  );
+   );
 });
