@@ -71,12 +71,11 @@ var handleTouchStart = (e) => {
     for(var i = 0; i < touches.length; i ++) {
         if(touches[i].pageX < 50 && touches[i].pageY < 50) {
             console.log("aah");
-            navigator.serviceWorker.getRegistrations()
-                .then(registrations => {
-                    registrations.map(r => {
-                        r.unregister()
-                    }) 
-                })
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                for (const registration of registrations) {
+                    registration.unregister();
+                } 
+            });
         }
         currentTouches.push(copyTouch(touches[i]));
         //text(touches[i].identifier, touches[i].pageX, touches[i].pageY);
