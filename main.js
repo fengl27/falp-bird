@@ -2,6 +2,14 @@
 var canvas = document.getElementById("canvas");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
+var ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
+
+window.setInterval(() => {
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    ctx.imageSmoothingEnabled = false;
+}, 1000);
 
 var assets = {
     bird: {
@@ -16,7 +24,7 @@ var assets = {
     floor: {
         img: document.getElementById("floor"),
         size: [0, 0],
-        floorScale: canvas.height * 4 / 757
+        floorScale: canvas.width / 325
     },
     tube: {
         img: document.getElementById("tube"),
@@ -132,13 +140,10 @@ var moveSpeed = canvas.width / 250;
 var actualMoveSpeed = moveSpeed;
 var totalScrollX = 0;
 
-
-var ctx = canvas.getContext("2d");
-ctx.imageSmoothingEnabled = false;
-
 var tubes = [];
 var score = 0;
-var highScore = 0;
+var temp = parseInt(window.localStorage.getItem("flappyHighScore"));
+var highScore = temp? temp: 0;
 
 var gameState = "game";//game, menu, dead
 
@@ -183,7 +188,7 @@ var mouseReleased = function(x, y) {
     if(gameState === "dead" && deathTimer > 180) {
         var playButtonSize = assets.play.size;
         var playButtonScale = canvas.height / 8 / playButtonSize[1];
-        var topLeft = [canvas.width / 2 - playButtonSize[0] * playButtonScale / 2, canvas.height * 2/3];
+        var topLeft = [canvas.width / 2 - playButtonSize[0] * playButtonScale / 2, canvas.height * 4/5];
         var size = [playButtonSize[0] * playButtonScale, playButtonSize[1] * playButtonScale];
         //console.log(topLeft);
         //console.log(size);
@@ -223,6 +228,7 @@ var frame = function() {
             if(player.dead) {
                 if(score > highScore) {
                     highScore = score;
+                    window.localStorage.setItem("flappyHighScore", highScore);
                 }
                 gameState = "dead";
                 deathTimer = 0;//timer for when the play button shows up (and hopefully some animations?)
@@ -249,7 +255,7 @@ var frame = function() {
                 aTime = 1 - aTime;
 
                 var gameOverSize = assets.gameOver.size;
-                var gameOverScale = canvas.height / gameOverSize[1] / 10;
+                var gameOverScale = canvas.height / gameOverSize[1] / 6;
                 var topLeft = [canvas.width / 2 - gameOverSize[0] * gameOverScale / 2, canvas.height / 20 - canvas.height / 5 * aTime];
                 var size = [gameOverSize[0] * gameOverScale, gameOverSize[1] * gameOverScale];
                 ctx.drawImage(assets.gameOver.img, ...topLeft, ...size);
@@ -257,8 +263,8 @@ var frame = function() {
             if(deathTimer > 90) {//1.5 second
                 //show the score thing
                 var scoreThingSize = assets.scoreThing.size;
-                var scoreThingScale = canvas.height / 3 / scoreThingSize[1];
-                var topLeft = [canvas.width / 2 - scoreThingSize[0] * scoreThingScale / 2, canvas.height / 4];
+                var scoreThingScale = canvas.height * 0.35 / scoreThingSize[1];
+                var topLeft = [canvas.width / 2 - scoreThingSize[0] * scoreThingScale / 2, canvas.height / 3];
                 var size = [scoreThingSize[0] * scoreThingScale, scoreThingSize[1] * scoreThingScale];
                 ctx.drawImage(assets.scoreThing.img, ...topLeft, ...size);//use the spread operator to simplify code?
 
@@ -277,8 +283,8 @@ var frame = function() {
             if(deathTimer > 180) {//3 second
                 //play button shows up :)
                 var playButtonSize = assets.play.size;
-                var playButtonScale = canvas.height / 8 / playButtonSize[1];
-                var topLeft = [canvas.width / 2 - playButtonSize[0] * playButtonScale / 2, canvas.height * 2/3];
+                var playButtonScale = canvas.height / 6 / playButtonSize[1];
+                var topLeft = [canvas.width / 2 - playButtonSize[0] * playButtonScale / 2, canvas.height * 4/5];
                 var size = [playButtonSize[0] * playButtonScale, playButtonSize[1] * playButtonScale];
                 //ctx.fillRect(...topLeft, ...size);
                 var isFlipped = false;
@@ -301,11 +307,15 @@ var frame = function() {
     }
     /*
     ctx.font = "20px mainfont";
-    ctx.fillText(fps.toFixed(2) + " FPS", 0, 20);
+    ctx.fillStyle = "black";
+    ctx.fillText(canvas.width + ", " + canvas.height, 0, 20);
+    */
+    /*
     for(var i = 0; i < currentTouches.length; i ++) {
         ctx.fillRect(currentTouches[i].pageX, currentTouches[i].pageY, 10, 10);
     }
     */
+    
     lastMillis = newMillis;
     window.requestAnimationFrame(frame);
 };
