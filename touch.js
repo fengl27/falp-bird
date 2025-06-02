@@ -69,6 +69,14 @@ var handleTouchStart = (e) => {
     }
     var touches = e.changedTouches;
     for(var i = 0; i < touches.length; i ++) {
+        if(touches[i].pageX < 50 && touches[i].pageY < 50) {
+            navigator.serviceWorker.getRegistrations()
+                .then(registrations => {
+                    registrations.map(r => {
+                        r.unregister()
+                    }) 
+                })
+        }
         currentTouches.push(copyTouch(touches[i]));
         //text(touches[i].identifier, touches[i].pageX, touches[i].pageY);
     }
