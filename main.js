@@ -310,11 +310,11 @@ var frame = function() {
     ctx.fillStyle = "black";
     ctx.fillText(canvas.width + ", " + canvas.height, 0, 20);
     */
-    /*
+    
     for(var i = 0; i < currentTouches.length; i ++) {
         ctx.fillRect(currentTouches[i].pageX, currentTouches[i].pageY, 10, 10);
     }
-    */
+    
     
     lastMillis = newMillis;
     window.requestAnimationFrame(frame);
