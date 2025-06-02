@@ -4,8 +4,8 @@ var createPlayer = function() {
         vel: -canvas.height / 35,
         scale: assets.floor.floorScale,
         dead: false,
-        gravity: canvas.height / 500,
-        jumpStrength: canvas.height / 48,
+        gravity: canvas.height / 650,
+        jumpStrength: canvas.height / 52,
         moveBackwards: false,
         display: function() {
             drawBird(this.pos[0], this.pos[1], Math.min(Math.PI / 2, this.vel / canvas.height * 30), this.scale);
