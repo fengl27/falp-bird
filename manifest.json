@@ -1,0 +1,31 @@
+{
+    "name": "Flappy Bird!",
+    "short_name": "FlapBird",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#439ca3",
+    "theme_color": "#439ca3",
+    "orientation": "landscape",
+    "description": "A flappy and bird mobile game.",
+    "icons": [
+        {
+            "src": "./icon.png",
+            "sizes": "225x225",
+            "type": "image/png"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "./screenshot1.png",
+            "type": "image/png",
+            "sizes": "1372x952",
+            "form_factor": "wide"
+        },
+        {
+            "src": "./screenshot2.png",
+            "type": "image/png",
+            "sizes": "1536x2048",
+            "form_factor": "narrow"
+        }
+    ]
+  }
