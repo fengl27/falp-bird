@@ -1,271 +1,322 @@
 
-var buttonEl = document.getElementById("button");
-var fileEl = document.getElementById("file");
 var canvas = document.getElementById("canvas");
-var previewEl = document.getElementById("preview");
-var entropyRangeInput = document.getElementById("entropy-range");
-var useRotationsInput = document.getElementById("use-rotations");
-var DIMInput = document.getElementById("dim-input");
-
-canvas.width = window.outerWidth;
-canvas.height = window.outerHeight;
-canvas.onclick = function() {
-    canvas.requestFullscreen();
-};
-var ctx = canvas.getContext("2d", {willReadFrequently: true});
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+var ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 
-var data = [];
-var DIM = 60;//60x60 output :)
-var pixelSize = Math.floor(canvas.height / DIM);
+window.setInterval(() => {
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    ctx.imageSmoothingEnabled = false;
+}, 1000);
 
-var totalTiles = 0;
-var maxOptionsLength = 0;
+var assets = {
+    bird: {
+        img: document.getElementsByClassName("bird"),
+        size: [document.getElementsByClassName("bird")[0].offsetWidth, document.getElementsByClassName("bird")[0].offsetHeight],
+        animOrder: [0, 1, 2, 1]
+    },
+    background: {
+        img: document.getElementById("background"),
+        size: [0, 0]
+    },
+    floor: {
+        img: document.getElementById("floor"),
+        size: [0, 0],
+        floorScale: canvas.width / 325
+    },
+    tube: {
+        img: document.getElementById("tube"),
+        size: [0, 0]
+    },
+    play: {
+        img: document.getElementById("play"),
+        flipped: document.getElementById("play-flipped"),
+        size: [0, 0]
+    },
+    gameOver: {
+        img: document.getElementById("game-over"),
+        size: [0, 0]
+    },
+    numbers: {
+        img: document.getElementById("numbers"),
+        size: [0, 0]
+    },
+    scoreThing: {
+        img: document.getElementById("score-thing"),
+        size: [0, 0]
+    },
+    smallNumbers: {
+        img: document.getElementById("small-numbers"),
+        size: [0, 0]
+    },
+};
+var drawNumber = function(num, x, y, scale) {//center x align, hanging y align
+    var nums = num.toString().split("");//get each letter
+    var numWidth = assets.numbers.size[0] / 10;
+    var currOffset = x-numWidth * nums.length / 2 * scale;//half the total width of the num
+    for(var i = 0; i < nums.length; i ++) {
+        var xOffset = numWidth * parseInt(nums[i]);
+        ctx.drawImage(
+            assets.numbers.img,//image
+            xOffset, 0,//texture x y
+            numWidth, assets.numbers.size[1],//texture sample size
 
-var grid = [];
-
-var changes = [];
-
-var doLoop = true;
-
-var buttonClicked = function() {
-    console.log("You clicked a button. Wow.");
-    var file = fileEl.files[0];
-    if(file) {
-        var url = URL.createObjectURL(file);
-        previewEl.src = url;
-        previewEl.crossOrigin = "Anonymous";
-        DIM = parseInt(DIMInput.value);
-        pixelSize = Math.floor(canvas.height / parseInt(DIMInput.value));
-        previewEl.onload = function() {
-            console.log("began at " + performance.now());
-            var size = {x: previewEl.naturalWidth, y: previewEl.naturalHeight};
-            ctx.drawImage(previewEl, 0, 0);
-            ctx.drawImage(previewEl, size.x, 0);
-            ctx.drawImage(previewEl, 0, size.y);
-            ctx.drawImage(previewEl, size.x, size.y);//make 4 of them
-            
-            console.log(ctx.getImageData(0, 0, size.x + tileSize - tileCenter, size.y + tileSize - tileCenter));
-
-            extractTiles(ctx.getImageData(0, 0, size.x + tileSize - tileCenter, size.y + tileSize - tileCenter), size, tileSize);
-            //console.log(tiles.length);
-            totalTiles = tiles.length;
-            tiles = deduplicate(tiles);
-            maxOptionsLength = tiles.length;
-
-            for(var i = 0; i < tiles.length; i ++) {
-                var P = tiles[i].appearences / totalTiles;
-                tiles[i].entropy = P * Math.log(P);
-            }
-            //console.log(tiles);
-            for(var i = 0; i < tiles.length; i ++) {
-                tiles[i].calculateNeighbors(tiles);
-            }
-
-            var temp = getEntropy(new Cell(tiles, 0, 0, pixelSize, 0, 0));//entropy of all default cells
-            var id = 0;
-            for(var j = 0; j < DIM; j ++) {
-                for(var i = 0; i < DIM; i ++) {
-                    grid.push(new Cell(tiles, i * pixelSize, j * pixelSize, pixelSize, id, temp));//could replace this nested for loop later for optimization :D
-                    id ++;//instead of id I could use grid.length >:)
-                }
-            }
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            /*
-            var id = 0; 
-            var x = 0;
-            var y = 0;
-            while(id < tiles.length) {
-                drawArr(tiles[id].img, {x: tileSize, y: tileSize}, x * 4, y * 4);
-                id ++;
-                x ++;
-                if(x === 10) {
-                    x = 0;
-                    y ++;
-                }
-            }
-            */
-           
-            /*
-            drawArr(tiles[2].img, {x: tileSize, y: tileSize}, 0, 0);
-            for(var j = 0; j < 4; j ++) {
-                for(var i = 0; i < tiles[2].neighbors[j].length; i ++) {
-                    drawArr(tiles[tiles[2].neighbors[j][i]].img, {x: tileSize, y: tileSize}, 4 * (j + 1), i * 4);
-                }
-            }
-            */
-            //ctx.putImageData(new ImageData(new Uint8ClampedArray(tiles[0].img), tileSize, tileSize), 400, 0);
-            console.log("ended setup at " + performance.now());
-
-            var randCell = grid[DIM * DIM - 1];
-            collapseTile(grid, randCell);
-
-            window.requestAnimationFrame(frame);//start the draw loop! (or at least request to :D)
-        };
-    }
-    else {
-        alert("Um. There isn't a file.")
+            currOffset, y,//x, y
+            numWidth * scale,//width
+            assets.numbers.size[1] * scale//height
+        );
+        currOffset += numWidth * scale;
     }
 };
-buttonEl.addEventListener("click", buttonClicked);
+var drawSmallNumber = function(num, x, y, scale) {//right x align, hanging y align
+    var nums = num.toString().split("");//get each letter
+    var numWidth = assets.smallNumbers.size[0] / 10;
+    var currOffset = x-numWidth * nums.length * scale;//half the total width of the num
+    for(var i = 0; i < nums.length; i ++) {
+        var xOffset = numWidth * parseInt(nums[i]);
+        ctx.drawImage(
+            assets.smallNumbers.img,//image
+            xOffset, 0,//texture x y
+            numWidth, assets.smallNumbers.size[1],//texture sample size 
 
-var reduceEntropy = function(grid, cell, limit) {
-    if(limit === 0) {
-        return false;
-    }
-    var idx = cell.index;
-    var i = idx % DIM;//haha i do not need a math.flor here >:) (my spelling is great)
-    var j = Math.floor(idx / DIM);
-
-    var things = [
-        [1, 0],
-        [-1, 0],
-        [0, -1],
-        [0, 1]
-    ];//jank
-
-    for(var k = 0; k < 4; k ++) {
-        var ni = i + things[k][0];//extremely not racist coding :)
-        var nj = j + things[k][1];
-        if(ni < DIM && ni >= 0 && nj < DIM && nj >= 0) {
-            var rightCell = grid[ni + nj * DIM];//right cell is not always right (it could be left (not wrong))
-            if(!rightCell.collapsed) {
-                //find rightcell's options :)
-
-                var validOptions = [];
-                if(cell.options.length > 0) {
-                    for(var option of cell.options) {
-                        //console.log(option);
-                        //console.log(tiles[option]);
-                        if(tiles[option]) {
-                            validOptions.push(...tiles[option].neighbors[k]);//concat
-                        }
-                        else {
-                            return true;
-                        }
-                    }
-                    rightCell.options = rightCell.options.filter(elt => validOptions.includes(elt));
-                    rightCell.entropy = getEntropy(rightCell);//get entropy again once you change the options
-                    if(reduceEntropy(grid, rightCell, limit - 1)) {//if it ran into conflict
-                        return true;
-                    }
-                }
-                else {
-                    return true;
-                }
-            }
-        }
+            currOffset, y,//x, y
+            numWidth * scale,//width
+            assets.smallNumbers.size[1] * scale//height
+        );
+        currOffset += Math.floor(numWidth * scale);
     }
 };
-
-var resetGrid = function() {
-    grid = [];
-    var id = 0;
-    for(var j = 0; j < DIM; j ++) {
-        for(var i = 0; i < DIM; i ++) {
-            grid.push(new Cell(tiles, i * pixelSize, j * pixelSize, pixelSize, id));//could replace this nested for loop later for optimization :D
-            id ++;//instead of id I could use grid.length >:)
-        }
-    }
-    var randCell = grid[DIM * DIM - 1];
-    collapseTile(grid, randCell);
-};
-var backprop = function() {//it's supposed to be backtrack (sorry)
-    console.log("backtracked");
-    //go backwards
-    var change = changes[changes.length - 1];//the latest change
-    changes.splice(changes.length - 1, 1);//delete it (I don't think we need this, actually :0)
-    for(var thing = 0; thing < change.length; thing ++) {
-        if(grid[thing].collapsed && change[thing][0].length > 1) {
-            //got collapsed by the change
-            //remove the change from the options
-            var temp = grid[thing].options[0];//the thing it collapsed into
-            grid[thing].options = change[thing][0];//revert change
-            grid[thing].options.splice(grid[thing].options.indexOf(temp), 1);//remove the thing that caused the cringe
+var loadAssets = () => {
+    var allLoaded = true;
+    for(var id in assets) {
+        var asset = assets[id];
+        if(id === "bird") {
+            asset.size = [asset.img[0].offsetWidth, asset.img[0].offsetHeight];//bird has multiple imgs
         }
         else {
-            grid[thing].options = change[thing][0];
+            asset.size = [asset.img.offsetWidth, asset.img.offsetHeight];
         }
-        grid[thing].entropy = getEntropy(grid[thing]);
-        //grid[thing].collapsed = false;
-        grid[thing].collapsed = change[thing][1];//reset change
-        //console.log(grid[thing]);
-    }
-    //doLoop = false;//pause the frame loop
-};
-
-var collapseTile = function(grid, randCell, shouldSave) {
-    if(shouldSave) {
-        changes.push([]);
-        if(changes.length > 80) {
-            changes.splice(0, 1);//delete the ones too far back (they probably don't matter (I hope))
-        }
-        for(var i = 0; i < grid.length; i ++) {
-            changes[changes.length - 1][i] = [grid[i].options.slice(), grid[i].collapsed];
+        var temp = asset.size.join(", ");
+        if(temp === "0, 0" || temp === ", ") {
+            allLoaded = false;
         }
     }
-    randCell.collapsed = true;
-    randCell.options = [randCell.options[Math.floor(Math.random() * randCell.options.length)]];
-    //add propagation of the entroyp thing
-    if(reduceEntropy(grid, randCell, parseInt(entropyRangeInput.value))) {
-        console.log("reducing entropy sorta didn't work :(");
-        //probably reset the grid :0
-        backprop();
+    if(allLoaded) {
+        frame();
     }
-};
-
-var getEntropy = function(cell) {
-    var totalEntropy = 0;
-    for(var i = 0; i < cell.options.length; i ++) {
-        totalEntropy -= tiles[cell.options[i]].entropy;
+    else {
+        window.setTimeout(loadAssets, 20);
     }
-    return totalEntropy;
 }
+window.setTimeout(loadAssets, 20);
 
-var wfc = function() {
-    //Collapse the wave :)))))))))
-
-    var leastEntropy = 10000000;
-    var leastEntropyIds = [];
-    for(var i = 0; i < grid.length; i ++) {
-        if(grid[i].options.length === 1 && !grid[i].collapsed) {
-            collapseTile(grid, grid[i], false);
-        }
-        else if(!grid[i].collapsed && grid[i].options.length !== maxOptionsLength) {
-            if(grid[i].entropy < leastEntropy) {
-                //delete the other ones because they have a higher entropy than this one
-                leastEntropyIds = [i];
-                leastEntropy = grid[i].entropy;
-            }
-            else if(grid[i].entropy === leastEntropy) {
-                //this new one is tied for first, just add it to the arr
-                leastEntropyIds.push(i);
-            }
-        }
-    }
-    //yay :)
-    if(leastEntropyIds.length > 0) {
-        if(leastEntropy === 0) {
-            console.log("oh no");
-            backprop();
-            return;
-        }
-        var randCell = grid[leastEntropyIds[Math.floor(Math.random() * leastEntropyIds.length)]];
-        collapseTile(grid, randCell, true);
-    }
+var resetMatrix = function() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+};
+var drawBird = function(x, y, rot, scale) {
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    var size = assets.bird.size;
+    ctx.drawImage(assets.bird.img[assets.bird.animOrder[Math.floor(performance.now() / 200) % assets.bird.animOrder.length]], -size[0] / 2 * scale, -size[1] / 2 * scale, size[0] * scale, size[1] * scale);
+    resetMatrix();
+};
+var getBackgroundWidth = function() {
+    return assets.background.size[0] * canvas.height / assets.background.size[1];
+};
+var getGroundLevel = function() {
+    return canvas.height - assets.floor.floorScale * assets.floor.size[1];
+};
+var drawBackground = function(x, width) {
+    var scale = width / assets.background.size[0];
+    ctx.drawImage(assets.background.img, x, getGroundLevel() - scale * assets.background.size[1], assets.background.size[0] * scale, assets.background.size[1] * scale);
+};
+var drawFloor = function(x) {
+    ctx.drawImage(assets.floor.img, x, getGroundLevel(), assets.floor.size[0] * assets.floor.floorScale, assets.floor.size[1] * assets.floor.floorScale);
 };
 
-var frame = function() {
-    //this executes every frame after the setup (which happens after you click the button)
+var moveSpeed = canvas.width / 250;
+var actualMoveSpeed = moveSpeed;
+var totalScrollX = 0;
+
+var tubes = [];
+var score = 0;
+var temp = parseInt(window.localStorage.getItem("flappyHighScore"));
+var highScore = temp? temp: 0;
+
+var gameState = "game";//game, menu, dead
+
+var deathTimer = 0;
+
+var player = createPlayer();//using bird.js
+
+function reset() {
+    //reset the game
+    player = createPlayer();
+    actualMoveSpeed = moveSpeed;
+    score = 0;
+    tubes = [];
+}
+var lastMillis = performance.now();
+var displayFrame = function(newMillis, dt) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    wfc();//run the wave function collapsation
-    for(var i = 0; i < grid.length; i ++) {
-        grid[i].show();//displaying :)
+    var width = Math.floor(getBackgroundWidth());
+    for(var x = (-totalScrollX / 3) % width; x < canvas.width; x += width) {
+        drawBackground(Math.floor(x), width);
     }
 
-    if(doLoop) {
-        window.requestAnimationFrame(frame);
+    //tubes displayed between background and ground
+    for(var i = tubes.length - 1; i >= 0; i --) {
+        tubes[i].update(dt);
+        tubes[i].display();
+        if(tubes[i].pos[0] < -tubes[i].size) {
+            tubes.splice(i, 1);
+        }
+    }
+
+    var width = Math.floor(assets.floor.size[0] * assets.floor.floorScale);
+    for(var x = Math.round((-totalScrollX) % width); x < canvas.width; x += width) {
+        drawFloor(x);
+    }
+    player.update(dt);
+    player.display();
+};
+var mouseReleased = function(x, y) {
+    //console.log(x + ", " + y);
+    //something released at x, y
+    if(gameState === "dead" && deathTimer > 180) {
+        var playButtonSize = assets.play.size;
+        var playButtonScale = canvas.height / 8 / playButtonSize[1];
+        var topLeft = [canvas.width / 2 - playButtonSize[0] * playButtonScale / 2, canvas.height * 4/5];
+        var size = [playButtonSize[0] * playButtonScale, playButtonSize[1] * playButtonScale];
+        //console.log(topLeft);
+        //console.log(size);
+        if(x + 25 > topLeft[0] &&
+            x - 25 < topLeft[0] + size[0] &&
+            y + 25 > topLeft[1] &&
+            y - 25 < topLeft[1] + size[1]
+        ) {
+            //console.log("hello");
+            gameState = "game";
+            reset();
+        }
     }
 };
+var frame = function() {
+    var newMillis = performance.now();
+    var dt = (newMillis - lastMillis) * 60 / 1000;//deltatime (how laggy it is)
+    var fps = 1000 / (newMillis - lastMillis);
+    if(dt > 10) {
+        dt = 1;
+    }
+    switch(gameState) {
+        case "game":
+            var lastTSX = totalScrollX;
+            totalScrollX += actualMoveSpeed * dt;
+            actualMoveSpeed += dt * 0.005;
+            if(totalScrollX % Math.floor(canvas.width / 3) < lastTSX % Math.floor(canvas.width / 3)) {
+                //spawn a tubular object
+                var tubeHeight = player.size[1] * 4;//big tube
+                var tubeWidth = assets.tube.size[0] * player.scale / 2;
+                var tubeY = Math.random() * (getGroundLevel() - tubeHeight * 2) + tubeHeight;
+                var tube = new Tube(tubeY, tubeHeight, tubeWidth);
+                tubes.push(tube);
+            }
+            displayFrame(newMillis, dt);
+            drawNumber(score, canvas.width / 2, canvas.height / 64, assets.floor.floorScale / 2);
+            if(player.dead) {
+                if(score > highScore) {
+                    highScore = score;
+                    window.localStorage.setItem("flappyHighScore", highScore);
+                }
+                gameState = "dead";
+                deathTimer = 0;//timer for when the play button shows up (and hopefully some animations?)
+            }
+            break;
+        case "dead":
+            totalScrollX += actualMoveSpeed * dt;
+            displayFrame(newMillis, dt);
+            actualMoveSpeed *= 0.95;
+            deathTimer += dt;
+            if(deathTimer > 20) {
+                //game over text falls from the sky
+                var aTime = 0;
+                var vel = 0;
+                for(var i = 0; i < deathTimer - 20; i ++) {
+                    vel += 1/40;
+                    aTime += vel;
+                    if(aTime > 1) {
+                        vel *= -0.8;
+                        aTime = 1;
+                    }
+                }
+
+                aTime = 1 - aTime;
+
+                var gameOverSize = assets.gameOver.size;
+                var gameOverScale = canvas.height / gameOverSize[1] / 6;
+                var topLeft = [canvas.width / 2 - gameOverSize[0] * gameOverScale / 2, canvas.height / 20 - canvas.height / 5 * aTime];
+                var size = [gameOverSize[0] * gameOverScale, gameOverSize[1] * gameOverScale];
+                ctx.drawImage(assets.gameOver.img, ...topLeft, ...size);
+            }
+            if(deathTimer > 90) {//1.5 second
+                //show the score thing
+                var scoreThingSize = assets.scoreThing.size;
+                var scoreThingScale = canvas.height * 0.35 / scoreThingSize[1];
+                var topLeft = [canvas.width / 2 - scoreThingSize[0] * scoreThingScale / 2, canvas.height / 3];
+                var size = [scoreThingSize[0] * scoreThingScale, scoreThingSize[1] * scoreThingScale];
+                ctx.drawImage(assets.scoreThing.img, ...topLeft, ...size);//use the spread operator to simplify code?
+
+                //score is 11 pixels from the right, 17 pixels from the top
+                var scoreTopRight = [
+                    topLeft[0] + size[0] - 17 * scoreThingScale,
+                    topLeft[1] + 34 * scoreThingScale 
+                ];
+                drawSmallNumber(score, ...scoreTopRight, scoreThingScale);
+                var scoreTopRight = [
+                    topLeft[0] + size[0] - 17 * scoreThingScale,
+                    topLeft[1] + 76 * scoreThingScale 
+                ];
+                drawSmallNumber(highScore, ...scoreTopRight, scoreThingScale);
+            }
+            if(deathTimer > 180) {//3 second
+                //play button shows up :)
+                var playButtonSize = assets.play.size;
+                var playButtonScale = canvas.height / 6 / playButtonSize[1];
+                var topLeft = [canvas.width / 2 - playButtonSize[0] * playButtonScale / 2, canvas.height * 4/5];
+                var size = [playButtonSize[0] * playButtonScale, playButtonSize[1] * playButtonScale];
+                //ctx.fillRect(...topLeft, ...size);
+                var isFlipped = false;
+                for(var i = 0; i < currentTouches.length; i ++) {
+                    if(currentTouches[i].pageX + 25 > topLeft[0] &&
+                        currentTouches[i].pageX - 25 < topLeft[0] + size[0] &&
+                        currentTouches[i].pageY + 25 > topLeft[1] &&
+                        currentTouches[i].pageY - 25 < topLeft[1] + size[1]
+                    ) {
+                        isFlipped = true;
+                        break;
+                    }
+                }
+                ctx.drawImage(isFlipped? assets.play.flipped: assets.play.img,
+                    ...topLeft,
+                    ...size
+                );
+            }
+            break;
+    }
+    /*
+    ctx.font = "20px mainfont";
+    ctx.fillStyle = "black";
+    ctx.fillText(canvas.width + ", " + canvas.height, 0, 20);
+    */
+    /*
+    for(var i = 0; i < currentTouches.length; i ++) {
+        ctx.fillRect(currentTouches[i].pageX, currentTouches[i].pageY, 10, 10);
+    }
+    */
+    
+    lastMillis = newMillis;
+    window.requestAnimationFrame(frame);
+};
+//window.requestAnimationFrame(frame);
